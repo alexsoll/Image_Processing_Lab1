@@ -1,14 +1,11 @@
 #pragma once
-//#include "functions.h"
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgcodecs/imgcodecs.hpp>
 #include <opencv2\opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <windows.h>
-//#include <>
-//#include <opencv2\core\core.hpp>
+#include "Cluster.cpp"
 
-//using namespace cv;
 
 namespace Open_CV___test__02 {
 
@@ -29,7 +26,7 @@ namespace Open_CV___test__02 {
 
 	Mat src;
 	Mat srcOriginal;
-
+	int *R, *G, *B;
 
 
 	/// <summary>
@@ -44,7 +41,18 @@ namespace Open_CV___test__02 {
 			//
 			//TODO: Add the constructor code here
 			//
+			R = new int[514];
+			G = new int[514];
+			B = new int[514];
 
+			for (int i = 0; i < 514; i++)
+			{
+				R[i] = 0;
+				G[i] = 0;
+				B[i] = 0;
+
+			}
+			srand(time(NULL));
 		}
 
 	protected:
@@ -98,19 +106,62 @@ namespace Open_CV___test__02 {
 
 		double uniform(double sigma) {
 			//sigma = 10;
-			return sigma * sqrt(3) * ((2 * (rand() % 100) / 100) - 1);
+			//srand(time(NULL));
+			int random = rand();
+			//textBox1->Text += "Ret_" + Convert::ToString(sigma * sqrt(3) * ((2 * (rand() % 100) / 100) - 1));
+			double ret = sigma * sqrt(3) * ((2 * (double)(random % 100) / 100) - 1);
+			return ret;
 		}
-
 
 		Mat addNoize(Mat src, double sigma, int percent)
 		{
+			srand(time(NULL));
 			for (int i = 0; i < src.rows; ++i)
 				for (int j = 0; j < src.cols; ++j) {
-					if (rand() % 100 <= percent)
-						src.at<Vec3b>(i, j) += Vec3b(uniform(sigma), uniform(sigma), uniform(sigma));
+					Vec3b noize;// = Vec3b(uniform(sigma), uniform(sigma), uniform(sigma));
+					int nR = (int)uniform(sigma);
+					int nG = (int)uniform(sigma);
+					int nB = (int)uniform(sigma);
+
+
+					noize.val[0] = nR;
+					noize.val[1] = nG;
+					noize.val[2] = nB;
+					if (rand() % 100 <= percent) {
+						src.at<Vec3b>(i, j) += noize;
+						//B[nR + 255]++;
+						//G[nG + 255]++;
+						//R[nB + 255]++;
+					}
+					//B[src.at<Vec3b>(i, j).val[0]]++;
+					//G[src.at<Vec3b>(i, j).val[1]]++;
+					//R[src.at<Vec3b>(i, j).val[2]]++;
 				}
+
+			textBox1->Text += "R";
+			for (int i = 0; i < 512; i++)
+			{
+				textBox1->Text += Convert::ToString(R[i]) + " ";
+			}
+			textBox1->Text += "\nG";
+
+			for (int i = 0; i < 512; i++)
+			{
+				textBox1->Text += Convert::ToString(G[i]) + " ";
+			}
+			textBox1->Text += "\nB";
+
+			for (int i = 0; i < 512; i++)
+			{
+				textBox1->Text += Convert::ToString(B[i]) + " ";
+			}
 			return src;
+			
 		}
+
+
+
+
 
 
 
@@ -133,8 +184,8 @@ namespace Open_CV___test__02 {
 			uchar blue = intensity.val[0];
 			uchar green = intensity.val[1];
 			uchar red = intensity.val[2];
-			double lightness = 0.2126 * red + 0.7152 * green + 0.0722 * blue;
-			//float intensity = (float)img.at<uchar>(i, j); 
+			//double lightness = 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+			float lightness = (float)img.at<uchar>(i, j); 
 		return lightness;
 		}
 
@@ -279,6 +330,9 @@ namespace Open_CV___test__02 {
 private: System::Windows::Forms::Button^  button6;
 private: System::Windows::Forms::Label^  label2;
 private: System::Windows::Forms::Button^  button7;
+private: System::Windows::Forms::CheckBox^  checkBox1;
+private: System::Windows::Forms::TextBox^  textBox1;
+private: System::Windows::Forms::Button^  button8;
 
 
 	protected:
@@ -313,6 +367,9 @@ private: System::Windows::Forms::Button^  button7;
 			this->button6 = (gcnew System::Windows::Forms::Button());
 			this->label2 = (gcnew System::Windows::Forms::Label());
 			this->button7 = (gcnew System::Windows::Forms::Button());
+			this->checkBox1 = (gcnew System::Windows::Forms::CheckBox());
+			this->textBox1 = (gcnew System::Windows::Forms::TextBox());
+			this->button8 = (gcnew System::Windows::Forms::Button());
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox1))->BeginInit();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox2))->BeginInit();
 			this->SuspendLayout();
@@ -327,10 +384,11 @@ private: System::Windows::Forms::Button^  button7;
 			this->pictureBox1->SizeMode = System::Windows::Forms::PictureBoxSizeMode::Zoom;
 			this->pictureBox1->TabIndex = 0;
 			this->pictureBox1->TabStop = false;
+			this->pictureBox1->Click += gcnew System::EventHandler(this, &MyForm::pictureBox1_Click);
 			// 
 			// button1
 			// 
-			this->button1->Location = System::Drawing::Point(957, 737);
+			this->button1->Location = System::Drawing::Point(949, 736);
 			this->button1->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
 			this->button1->Name = L"button1";
 			this->button1->Size = System::Drawing::Size(112, 35);
@@ -436,11 +494,43 @@ private: System::Windows::Forms::Button^  button7;
 			this->button7->UseVisualStyleBackColor = true;
 			this->button7->Click += gcnew System::EventHandler(this, &MyForm::button7_Click);
 			// 
+			// checkBox1
+			// 
+			this->checkBox1->AutoSize = true;
+			this->checkBox1->Location = System::Drawing::Point(780, 780);
+			this->checkBox1->Name = L"checkBox1";
+			this->checkBox1->Size = System::Drawing::Size(122, 24);
+			this->checkBox1->TabIndex = 11;
+			this->checkBox1->Text = L"always open";
+			this->checkBox1->UseVisualStyleBackColor = true;
+			// 
+			// textBox1
+			// 
+			this->textBox1->Location = System::Drawing::Point(18, 778);
+			this->textBox1->Multiline = true;
+			this->textBox1->Name = L"textBox1";
+			this->textBox1->Size = System::Drawing::Size(697, 94);
+			this->textBox1->TabIndex = 12;
+			// 
+			// button8
+			// 
+			this->button8->Location = System::Drawing::Point(1137, 365);
+			this->button8->Name = L"button8";
+			this->button8->Size = System::Drawing::Size(75, 23);
+			this->button8->TabIndex = 13;
+			this->button8->Text = L"button8";
+			this->button8->UseVisualStyleBackColor = true;
+			this->button8->Click += gcnew System::EventHandler(this, &MyForm::button8_Click);
+			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(9, 20);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->ClientSize = System::Drawing::Size(1245, 796);
+			this->AutoSize = true;
+			this->ClientSize = System::Drawing::Size(1245, 884);
+			this->Controls->Add(this->button8);
+			this->Controls->Add(this->textBox1);
+			this->Controls->Add(this->checkBox1);
 			this->Controls->Add(this->button7);
 			this->Controls->Add(this->label2);
 			this->Controls->Add(this->button6);
@@ -452,7 +542,6 @@ private: System::Windows::Forms::Button^  button7;
 			this->Controls->Add(this->pictureBox2);
 			this->Controls->Add(this->button1);
 			this->Controls->Add(this->pictureBox1);
-			this->FormBorderStyle = System::Windows::Forms::FormBorderStyle::FixedDialog;
 			this->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
 			this->Name = L"MyForm";
 			this->Text = L"MyForm";
@@ -495,6 +584,8 @@ private: System::Void button2_Click(System::Object^  sender, System::EventArgs^ 
 	
 	pictureBox1->Image = toBitMapPoint(src);
 	pictureBox1->Refresh();
+
+	if (checkBox1->Checked)
 	imshow("Display window", src);
 
 }
@@ -518,7 +609,11 @@ private: System::Void button3_Click(System::Object^  sender, System::EventArgs^ 
 	
 	pictureBox1->Image = toBitMapPoint(src);
 	pictureBox1->Refresh();
+
+	if (checkBox1->Checked)
 	imshow("Display window", src);
+
+
 
 }
 private: System::Void button6_Click(System::Object^  sender, System::EventArgs^  e) {
@@ -530,6 +625,8 @@ private: System::Void button6_Click(System::Object^  sender, System::EventArgs^ 
 	
 	pictureBox1->Image = toBitMapPoint(src);
 	pictureBox1->Refresh();
+
+	if (checkBox1->Checked)
 	imshow("Display window", src);
 
 }
@@ -558,10 +655,103 @@ private: System::Void button5_Click(System::Object^  sender, System::EventArgs^ 
 private: System::Void button7_Click(System::Object^  sender, System::EventArgs^  e) {
 
 	if (!pictureBox1->Image) return;
+
 	imshow("Display window", src);
 
 }
 private: System::Void MyForm_Load(System::Object^  sender, System::EventArgs^  e) {
+}
+private: System::Void button8_Click(System::Object^  sender, System::EventArgs^  e) {
+
+	/*Mat ocv = src;
+	Mat data;
+	ocv.convertTo(data, CV_32F);
+	data = data.reshape(1, data.total());
+
+	// do kmeans
+	Mat labels, centers;
+	kmeans(data, 8, labels, TermCriteria(CV_TERMCRIT_ITER, 10, 1.0), 3,
+		KMEANS_PP_CENTERS, centers);
+
+	// reshape both to a single row of Vec3f pixels:
+	centers = centers.reshape(3, centers.rows);
+	data = data.reshape(3, data.rows);
+
+	// replace pixel values with their center value:
+	Vec3f *p = data.ptr<Vec3f>();
+	for (size_t i = 0; i < data.rows; i++) {
+		int center_id = labels.at<int>(i);
+		p[i] = centers.at<Vec3f>(center_id);
+	}
+
+	// back to 2d, and uchar:
+	ocv = data.reshape(3, ocv.rows);
+	ocv.convertTo(ocv, CV_8U);
+
+	src = ocv;
+	pictureBox1->Image = toBitMapPoint(src);
+	pictureBox1->Refresh();*/
+
+	const int MAX_CLUSTERS = 10;
+	Scalar colorTab[] =
+	{
+		Scalar(0, 0, 255),
+		Scalar(0,255,0),
+		Scalar(255,100,100),
+		Scalar(255,0,255),
+		Scalar(0,255,255),
+		Scalar(50, 50, 255),
+		Scalar(40,205,10),
+		Scalar(200,100,150),
+		Scalar(20,30,105),
+		Scalar(50,105,145)
+	};
+	RNG rng(123456789);
+
+	for (;;)
+	{
+		int k, clusterCount = rng.uniform(2, MAX_CLUSTERS + 1);
+		int i, sampleCount = rng.uniform(1, 10001);
+		Mat points(sampleCount, 1, CV_32FC2), labels;
+
+		clusterCount = MIN(clusterCount, sampleCount);
+		Mat centers(clusterCount, 1, points.type());
+
+		for (k = 0; k < clusterCount; k++)
+		{
+			POINT center;
+			center.x = rng.uniform(0, src.cols);
+			center.y = rng.uniform(0, src.rows);
+			Mat pointChunk = points.rowRange(k*sampleCount / clusterCount,
+				k == clusterCount - 1 ? sampleCount :
+				(k + 1)*sampleCount / clusterCount);
+			rng.fill(pointChunk, CV_RAND_NORMAL, Scalar(center.x, center.y), Scalar(src.cols*0.05, src.rows*0.05));
+		}
+
+		randShuffle(points, 1, &rng);
+		kmeans(points, clusterCount, labels,
+			TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 10, 1.0),
+			3, KMEANS_PP_CENTERS, centers);
+
+		src = Scalar::all(0);
+
+		for (i = 0; i < sampleCount; i++)
+		{
+			int clusterIdx = labels.at<int>(i);
+			Point2f ipt = points.at<Point2f>(i);
+			circle(src, ipt, 2, colorTab[clusterIdx], CV_FILLED, CV_AA);
+		}
+
+		imshow("clusters", src);
+
+		char key = (char)waitKey();
+		if (key == 27 || key == 'q' || key == 'Q') // 'ESC'
+			break;
+
+	}
+
+}
+private: System::Void pictureBox1_Click(System::Object^  sender, System::EventArgs^  e) {
 }
 };
 }
