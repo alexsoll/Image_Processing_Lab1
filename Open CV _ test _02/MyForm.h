@@ -1,11 +1,14 @@
 #pragma once
+#include "clusters.h"
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgcodecs/imgcodecs.hpp>
 #include <opencv2\opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <windows.h>
-#include "Cluster.cpp"
+//#include <>
+//#include <opencv2\core\core.hpp>
 
+//using namespace cv;
 
 namespace Open_CV___test__02 {
 
@@ -22,12 +25,12 @@ namespace Open_CV___test__02 {
 
 
 
-	
+
 
 	Mat src;
 	Mat srcOriginal;
-	int *R, *G, *B;
-
+	Cluster *clusters;
+	int k;
 
 	/// <summary>
 	/// Summary for MyForm
@@ -41,18 +44,8 @@ namespace Open_CV___test__02 {
 			//
 			//TODO: Add the constructor code here
 			//
-			R = new int[514];
-			G = new int[514];
-			B = new int[514];
 
-			for (int i = 0; i < 514; i++)
-			{
-				R[i] = 0;
-				G[i] = 0;
-				B[i] = 0;
 
-			}
-			srand(time(NULL));
 		}
 
 	protected:
@@ -106,62 +99,19 @@ namespace Open_CV___test__02 {
 
 		double uniform(double sigma) {
 			//sigma = 10;
-			//srand(time(NULL));
-			int random = rand();
-			//textBox1->Text += "Ret_" + Convert::ToString(sigma * sqrt(3) * ((2 * (rand() % 100) / 100) - 1));
-			double ret = sigma * sqrt(3) * ((2 * (double)(random % 100) / 100) - 1);
-			return ret;
+			return sigma * sqrt(3) * ((2 * (rand() % 100) / 100) - 1);
 		}
+
 
 		Mat addNoize(Mat src, double sigma, int percent)
 		{
-			srand(time(NULL));
 			for (int i = 0; i < src.rows; ++i)
 				for (int j = 0; j < src.cols; ++j) {
-					Vec3b noize;// = Vec3b(uniform(sigma), uniform(sigma), uniform(sigma));
-					int nR = (int)uniform(sigma);
-					int nG = (int)uniform(sigma);
-					int nB = (int)uniform(sigma);
-
-
-					noize.val[0] = nR;
-					noize.val[1] = nG;
-					noize.val[2] = nB;
-					if (rand() % 100 <= percent) {
-						src.at<Vec3b>(i, j) += noize;
-						//B[nR + 255]++;
-						//G[nG + 255]++;
-						//R[nB + 255]++;
-					}
-					//B[src.at<Vec3b>(i, j).val[0]]++;
-					//G[src.at<Vec3b>(i, j).val[1]]++;
-					//R[src.at<Vec3b>(i, j).val[2]]++;
+					if (rand() % 100 <= percent)
+						src.at<Vec3b>(i, j) += Vec3b(uniform(sigma), uniform(sigma), uniform(sigma));
 				}
-
-			textBox1->Text += "R";
-			for (int i = 0; i < 512; i++)
-			{
-				textBox1->Text += Convert::ToString(R[i]) + " ";
-			}
-			textBox1->Text += "\nG";
-
-			for (int i = 0; i < 512; i++)
-			{
-				textBox1->Text += Convert::ToString(G[i]) + " ";
-			}
-			textBox1->Text += "\nB";
-
-			for (int i = 0; i < 512; i++)
-			{
-				textBox1->Text += Convert::ToString(B[i]) + " ";
-			}
 			return src;
-			
 		}
-
-
-
-
 
 
 
@@ -179,67 +129,12 @@ namespace Open_CV___test__02 {
 			return 1.0 - sqrt(val1) / (img1.rows *img1.cols);
 		}
 
-		float Single_Lightness(Mat img, int i, int j) {
-			Vec3b intensity = img.at<Vec3b>(i, j);
-			uchar blue = intensity.val[0];
-			uchar green = intensity.val[1];
-			uchar red = intensity.val[2];
-			//double lightness = 0.2126 * red + 0.7152 * green + 0.0722 * blue;
-			float lightness = (float)img.at<uchar>(i, j); 
-		return lightness;
-		}
 
-		float Lightness(Mat img) {
-			float lightness = 0;
-			for (int i = 0; i < img.cols; ++i)
-				for (int j = 0; j < img.rows; ++j) {
-					lightness += Single_Lightness(img, i, j);
-				}
-			return lightness / (img.rows * img.cols);
-		}
-
-		float Contrast(Mat img) {
-			float contrast = 0, lightness = 0;
-			float L = Lightness(img);
-			for (int i = 0; i < img.cols; ++i)
-				for (int j = 0; j < img.rows; ++j) {
-					contrast += ((Single_Lightness(img, i, j) - L)*(Single_Lightness(img, i, j) - L));
-				}
-			return contrast / (img.rows * img.cols);
-		}
-	
-		float Struct(Mat img1, Mat img2) {
-			float Struct = 0;
-			float L1 = Lightness(img1), L2 = Lightness(img2);
-			for (int i = 0; i < img1.cols; ++i)
-				for (int j = 0; j < img1.rows; ++j) {
-					Struct += ((Single_Lightness(img1, i, j) - L1) * (Single_Lightness(img2, i, j) - L2));
-				}
-			return Struct / (img1.rows * img1.cols);
-		}
-
-
-		float SSIM_Similarity(Mat img1, Mat img2) {
-			float K = 0.01;
-			float L1 = Lightness(img1), L2 = Lightness(img2);
-			float lightness = (2 * L1 * L2 + K) / (L1 * L1 + L2 * L2 + K);
-
-			float C1 = Contrast(img1), C2 = Contrast(img2);
-			float contrast = (2 * sqrt(C1) * sqrt(C2) + K) / (C1 + C2 + K);
-
-			float S = Struct(img1, img2);
-			float strct = (S + K) / (sqrt(C1) * sqrt(C2) + K);
-
-			float SSIM = lightness * contrast * strct;
-
-			return SSIM;
-
-		}
 
 
 		Mat mid_filtration(Mat src, int sigma)
 		{
-		
+
 
 			int WinSize = sigma;
 			Vec3b res_color;
@@ -293,7 +188,7 @@ namespace Open_CV___test__02 {
 				}
 
 			return n_mat;
-		
+
 		}
 
 
@@ -327,17 +222,28 @@ namespace Open_CV___test__02 {
 	private: System::Windows::Forms::Button^  button3;
 	private: System::Windows::Forms::Button^  button4;
 	private: System::Windows::Forms::Button^  button5;
-private: System::Windows::Forms::Button^  button6;
-private: System::Windows::Forms::Label^  label2;
-private: System::Windows::Forms::Button^  button7;
-private: System::Windows::Forms::CheckBox^  checkBox1;
-private: System::Windows::Forms::TextBox^  textBox1;
-private: System::Windows::Forms::Button^  button8;
+	private: System::Windows::Forms::Button^  button6;
+	private: System::Windows::Forms::Label^  label2;
+	private: System::Windows::Forms::Button^  button7;
+	private: System::Windows::Forms::Button^  button8;
+private: System::Windows::Forms::PictureBox^  pictureBox3;
+private: System::Windows::Forms::Label^  label3;
+private: System::Windows::Forms::Label^  label4;
+private: System::Windows::Forms::Label^  label5;
+private: System::Windows::Forms::Label^  label6;
+private: System::Windows::Forms::Label^  label7;
+private: System::Windows::Forms::Label^  label8;
+private: System::Windows::Forms::NumericUpDown^  numericUpDown1;
+private: System::Windows::Forms::NumericUpDown^  numericUpDown3;
+private: System::Windows::Forms::NumericUpDown^  numericUpDown2;
+private: System::Windows::Forms::NumericUpDown^  numericUpDown4;
+private: System::Windows::Forms::NumericUpDown^  numericUpDown5;
+
 
 
 	protected:
 
-		
+
 
 
 
@@ -367,31 +273,44 @@ private: System::Windows::Forms::Button^  button8;
 			this->button6 = (gcnew System::Windows::Forms::Button());
 			this->label2 = (gcnew System::Windows::Forms::Label());
 			this->button7 = (gcnew System::Windows::Forms::Button());
-			this->checkBox1 = (gcnew System::Windows::Forms::CheckBox());
-			this->textBox1 = (gcnew System::Windows::Forms::TextBox());
 			this->button8 = (gcnew System::Windows::Forms::Button());
+			this->pictureBox3 = (gcnew System::Windows::Forms::PictureBox());
+			this->label3 = (gcnew System::Windows::Forms::Label());
+			this->label4 = (gcnew System::Windows::Forms::Label());
+			this->label5 = (gcnew System::Windows::Forms::Label());
+			this->label6 = (gcnew System::Windows::Forms::Label());
+			this->label7 = (gcnew System::Windows::Forms::Label());
+			this->label8 = (gcnew System::Windows::Forms::Label());
+			this->numericUpDown1 = (gcnew System::Windows::Forms::NumericUpDown());
+			this->numericUpDown3 = (gcnew System::Windows::Forms::NumericUpDown());
+			this->numericUpDown2 = (gcnew System::Windows::Forms::NumericUpDown());
+			this->numericUpDown4 = (gcnew System::Windows::Forms::NumericUpDown());
+			this->numericUpDown5 = (gcnew System::Windows::Forms::NumericUpDown());
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox1))->BeginInit();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox2))->BeginInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox3))->BeginInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->numericUpDown1))->BeginInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->numericUpDown3))->BeginInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->numericUpDown2))->BeginInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->numericUpDown4))->BeginInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->numericUpDown5))->BeginInit();
 			this->SuspendLayout();
 			// 
 			// pictureBox1
 			// 
 			this->pictureBox1->BorderStyle = System::Windows::Forms::BorderStyle::FixedSingle;
-			this->pictureBox1->Location = System::Drawing::Point(18, 18);
-			this->pictureBox1->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			this->pictureBox1->Location = System::Drawing::Point(12, 12);
 			this->pictureBox1->Name = L"pictureBox1";
-			this->pictureBox1->Size = System::Drawing::Size(720, 753);
+			this->pictureBox1->Size = System::Drawing::Size(481, 490);
 			this->pictureBox1->SizeMode = System::Windows::Forms::PictureBoxSizeMode::Zoom;
 			this->pictureBox1->TabIndex = 0;
 			this->pictureBox1->TabStop = false;
-			this->pictureBox1->Click += gcnew System::EventHandler(this, &MyForm::pictureBox1_Click);
 			// 
 			// button1
 			// 
-			this->button1->Location = System::Drawing::Point(949, 736);
-			this->button1->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			this->button1->Location = System::Drawing::Point(12, 508);
 			this->button1->Name = L"button1";
-			this->button1->Size = System::Drawing::Size(112, 35);
+			this->button1->Size = System::Drawing::Size(75, 23);
 			this->button1->TabIndex = 1;
 			this->button1->Text = L"Browse...";
 			this->button1->UseVisualStyleBackColor = true;
@@ -400,10 +319,9 @@ private: System::Windows::Forms::Button^  button8;
 			// pictureBox2
 			// 
 			this->pictureBox2->BorderStyle = System::Windows::Forms::BorderStyle::FixedSingle;
-			this->pictureBox2->Location = System::Drawing::Point(748, 18);
-			this->pictureBox2->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			this->pictureBox2->Location = System::Drawing::Point(499, 12);
 			this->pictureBox2->Name = L"pictureBox2";
-			this->pictureBox2->Size = System::Drawing::Size(320, 319);
+			this->pictureBox2->Size = System::Drawing::Size(214, 208);
 			this->pictureBox2->SizeMode = System::Windows::Forms::PictureBoxSizeMode::Zoom;
 			this->pictureBox2->TabIndex = 2;
 			this->pictureBox2->TabStop = false;
@@ -411,19 +329,17 @@ private: System::Windows::Forms::Button^  button8;
 			// label1
 			// 
 			this->label1->AutoSize = true;
-			this->label1->Location = System::Drawing::Point(854, 343);
-			this->label1->Margin = System::Windows::Forms::Padding(4, 0, 4, 0);
+			this->label1->Location = System::Drawing::Point(569, 223);
 			this->label1->Name = L"label1";
-			this->label1->Size = System::Drawing::Size(111, 20);
+			this->label1->Size = System::Drawing::Size(74, 13);
 			this->label1->TabIndex = 3;
 			this->label1->Text = L"Original Image";
 			// 
 			// button2
 			// 
-			this->button2->Location = System::Drawing::Point(748, 540);
-			this->button2->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			this->button2->Location = System::Drawing::Point(539, 351);
 			this->button2->Name = L"button2";
-			this->button2->Size = System::Drawing::Size(188, 35);
+			this->button2->Size = System::Drawing::Size(125, 23);
 			this->button2->TabIndex = 4;
 			this->button2->Text = L"To Gray Scale";
 			this->button2->UseVisualStyleBackColor = true;
@@ -431,10 +347,9 @@ private: System::Windows::Forms::Button^  button8;
 			// 
 			// button3
 			// 
-			this->button3->Location = System::Drawing::Point(748, 629);
-			this->button3->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			this->button3->Location = System::Drawing::Point(539, 409);
 			this->button3->Name = L"button3";
-			this->button3->Size = System::Drawing::Size(188, 35);
+			this->button3->Size = System::Drawing::Size(125, 23);
 			this->button3->TabIndex = 5;
 			this->button3->Text = L"Filtration";
 			this->button3->UseVisualStyleBackColor = true;
@@ -442,10 +357,9 @@ private: System::Windows::Forms::Button^  button8;
 			// 
 			// button4
 			// 
-			this->button4->Location = System::Drawing::Point(748, 443);
-			this->button4->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			this->button4->Location = System::Drawing::Point(539, 288);
 			this->button4->Name = L"button4";
-			this->button4->Size = System::Drawing::Size(188, 35);
+			this->button4->Size = System::Drawing::Size(125, 23);
 			this->button4->TabIndex = 6;
 			this->button4->Text = L"Cmpr with original";
 			this->button4->UseVisualStyleBackColor = true;
@@ -453,10 +367,9 @@ private: System::Windows::Forms::Button^  button8;
 			// 
 			// button5
 			// 
-			this->button5->Location = System::Drawing::Point(748, 398);
-			this->button5->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			this->button5->Location = System::Drawing::Point(539, 259);
 			this->button5->Name = L"button5";
-			this->button5->Size = System::Drawing::Size(188, 35);
+			this->button5->Size = System::Drawing::Size(125, 23);
 			this->button5->TabIndex = 7;
 			this->button5->Text = L"Make Original";
 			this->button5->UseVisualStyleBackColor = true;
@@ -464,10 +377,9 @@ private: System::Windows::Forms::Button^  button8;
 			// 
 			// button6
 			// 
-			this->button6->Location = System::Drawing::Point(748, 585);
-			this->button6->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			this->button6->Location = System::Drawing::Point(539, 380);
 			this->button6->Name = L"button6";
-			this->button6->Size = System::Drawing::Size(188, 35);
+			this->button6->Size = System::Drawing::Size(125, 23);
 			this->button6->TabIndex = 8;
 			this->button6->Text = L"Add Noize";
 			this->button6->UseVisualStyleBackColor = true;
@@ -476,61 +388,163 @@ private: System::Windows::Forms::Button^  button8;
 			// label2
 			// 
 			this->label2->AutoSize = true;
-			this->label2->Location = System::Drawing::Point(748, 483);
-			this->label2->Margin = System::Windows::Forms::Padding(4, 0, 4, 0);
+			this->label2->Location = System::Drawing::Point(499, 314);
 			this->label2->Name = L"label2";
-			this->label2->Size = System::Drawing::Size(94, 20);
+			this->label2->Size = System::Drawing::Size(63, 13);
 			this->label2->TabIndex = 9;
 			this->label2->Text = L"Similarity is: ";
 			// 
 			// button7
 			// 
-			this->button7->Location = System::Drawing::Point(753, 737);
-			this->button7->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			this->button7->Location = System::Drawing::Point(12, 537);
 			this->button7->Name = L"button7";
-			this->button7->Size = System::Drawing::Size(188, 35);
+			this->button7->Size = System::Drawing::Size(125, 23);
 			this->button7->TabIndex = 10;
 			this->button7->Text = L"Open in CV";
 			this->button7->UseVisualStyleBackColor = true;
 			this->button7->Click += gcnew System::EventHandler(this, &MyForm::button7_Click);
 			// 
-			// checkBox1
-			// 
-			this->checkBox1->AutoSize = true;
-			this->checkBox1->Location = System::Drawing::Point(780, 780);
-			this->checkBox1->Name = L"checkBox1";
-			this->checkBox1->Size = System::Drawing::Size(122, 24);
-			this->checkBox1->TabIndex = 11;
-			this->checkBox1->Text = L"always open";
-			this->checkBox1->UseVisualStyleBackColor = true;
-			// 
-			// textBox1
-			// 
-			this->textBox1->Location = System::Drawing::Point(18, 778);
-			this->textBox1->Multiline = true;
-			this->textBox1->Name = L"textBox1";
-			this->textBox1->Size = System::Drawing::Size(697, 94);
-			this->textBox1->TabIndex = 12;
-			// 
 			// button8
 			// 
-			this->button8->Location = System::Drawing::Point(1137, 365);
+			this->button8->Location = System::Drawing::Point(763, 259);
 			this->button8->Name = L"button8";
-			this->button8->Size = System::Drawing::Size(75, 23);
-			this->button8->TabIndex = 13;
-			this->button8->Text = L"button8";
+			this->button8->Size = System::Drawing::Size(125, 23);
+			this->button8->TabIndex = 11;
+			this->button8->Text = L"Clust";
 			this->button8->UseVisualStyleBackColor = true;
 			this->button8->Click += gcnew System::EventHandler(this, &MyForm::button8_Click);
 			// 
+			// pictureBox3
+			// 
+			this->pictureBox3->BorderStyle = System::Windows::Forms::BorderStyle::FixedSingle;
+			this->pictureBox3->Location = System::Drawing::Point(719, 12);
+			this->pictureBox3->Name = L"pictureBox3";
+			this->pictureBox3->Size = System::Drawing::Size(214, 208);
+			this->pictureBox3->SizeMode = System::Windows::Forms::PictureBoxSizeMode::Zoom;
+			this->pictureBox3->TabIndex = 12;
+			this->pictureBox3->TabStop = false;
+			// 
+			// label3
+			// 
+			this->label3->AutoSize = true;
+			this->label3->Location = System::Drawing::Point(791, 223);
+			this->label3->Name = L"label3";
+			this->label3->Size = System::Drawing::Size(83, 13);
+			this->label3->TabIndex = 13;
+			this->label3->Text = L"Clustered Image";
+			// 
+			// label4
+			// 
+			this->label4->AutoSize = true;
+			this->label4->Location = System::Drawing::Point(690, 314);
+			this->label4->Name = L"label4";
+			this->label4->Size = System::Drawing::Size(69, 13);
+			this->label4->TabIndex = 14;
+			this->label4->Text = L"Cluster count";
+			// 
+			// label5
+			// 
+			this->label5->AutoSize = true;
+			this->label5->Location = System::Drawing::Point(690, 351);
+			this->label5->Name = L"label5";
+			this->label5->Size = System::Drawing::Size(58, 13);
+			this->label5->TabIndex = 15;
+			this->label5->Text = L"Color coeff";
+			// 
+			// label6
+			// 
+			this->label6->AutoSize = true;
+			this->label6->Location = System::Drawing::Point(690, 380);
+			this->label6->Name = L"label6";
+			this->label6->Size = System::Drawing::Size(76, 13);
+			this->label6->TabIndex = 16;
+			this->label6->Text = L"Distance coeff";
+			// 
+			// label7
+			// 
+			this->label7->AutoSize = true;
+			this->label7->Location = System::Drawing::Point(689, 414);
+			this->label7->Name = L"label7";
+			this->label7->Size = System::Drawing::Size(70, 13);
+			this->label7->TabIndex = 17;
+			this->label7->Text = L"Dig color dec";
+			// 
+			// label8
+			// 
+			this->label8->AutoSize = true;
+			this->label8->Location = System::Drawing::Point(689, 442);
+			this->label8->Name = L"label8";
+			this->label8->Size = System::Drawing::Size(63, 13);
+			this->label8->TabIndex = 18;
+			this->label8->Text = L"Dig dist dec";
+			// 
+			// numericUpDown1
+			// 
+			this->numericUpDown1->Location = System::Drawing::Point(768, 435);
+			this->numericUpDown1->Maximum = System::Decimal(gcnew cli::array< System::Int32 >(4) { 5, 0, 0, 0 });
+			this->numericUpDown1->Minimum = System::Decimal(gcnew cli::array< System::Int32 >(4) { 1, 0, 0, 0 });
+			this->numericUpDown1->Name = L"numericUpDown1";
+			this->numericUpDown1->Size = System::Drawing::Size(120, 20);
+			this->numericUpDown1->TabIndex = 19;
+			this->numericUpDown1->Value = System::Decimal(gcnew cli::array< System::Int32 >(4) { 1, 0, 0, 0 });
+			// 
+			// numericUpDown3
+			// 
+			this->numericUpDown3->Location = System::Drawing::Point(768, 409);
+			this->numericUpDown3->Maximum = System::Decimal(gcnew cli::array< System::Int32 >(4) { 5, 0, 0, 0 });
+			this->numericUpDown3->Minimum = System::Decimal(gcnew cli::array< System::Int32 >(4) { 1, 0, 0, 0 });
+			this->numericUpDown3->Name = L"numericUpDown3";
+			this->numericUpDown3->Size = System::Drawing::Size(120, 20);
+			this->numericUpDown3->TabIndex = 21;
+			this->numericUpDown3->Value = System::Decimal(gcnew cli::array< System::Int32 >(4) { 1, 0, 0, 0 });
+			// 
+			// numericUpDown2
+			// 
+			this->numericUpDown2->Location = System::Drawing::Point(768, 307);
+			this->numericUpDown2->Maximum = System::Decimal(gcnew cli::array< System::Int32 >(4) { 10, 0, 0, 0 });
+			this->numericUpDown2->Minimum = System::Decimal(gcnew cli::array< System::Int32 >(4) { 2, 0, 0, 0 });
+			this->numericUpDown2->Name = L"numericUpDown2";
+			this->numericUpDown2->Size = System::Drawing::Size(120, 20);
+			this->numericUpDown2->TabIndex = 22;
+			this->numericUpDown2->Value = System::Decimal(gcnew cli::array< System::Int32 >(4) { 5, 0, 0, 0 });
+			this->numericUpDown2->ValueChanged += gcnew System::EventHandler(this, &MyForm::numericUpDown2_ValueChanged);
+			// 
+			// numericUpDown4
+			// 
+			this->numericUpDown4->Location = System::Drawing::Point(768, 349);
+			this->numericUpDown4->Minimum = System::Decimal(gcnew cli::array< System::Int32 >(4) { 1, 0, 0, 0 });
+			this->numericUpDown4->Name = L"numericUpDown4";
+			this->numericUpDown4->Size = System::Drawing::Size(120, 20);
+			this->numericUpDown4->TabIndex = 23;
+			this->numericUpDown4->Value = System::Decimal(gcnew cli::array< System::Int32 >(4) { 1, 0, 0, 0 });
+			// 
+			// numericUpDown5
+			// 
+			this->numericUpDown5->Location = System::Drawing::Point(768, 375);
+			this->numericUpDown5->Minimum = System::Decimal(gcnew cli::array< System::Int32 >(4) { 1, 0, 0, 0 });
+			this->numericUpDown5->Name = L"numericUpDown5";
+			this->numericUpDown5->Size = System::Drawing::Size(120, 20);
+			this->numericUpDown5->TabIndex = 24;
+			this->numericUpDown5->Value = System::Decimal(gcnew cli::array< System::Int32 >(4) { 1, 0, 0, 0 });
+			// 
 			// MyForm
 			// 
-			this->AutoScaleDimensions = System::Drawing::SizeF(9, 20);
+			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->AutoSize = true;
-			this->ClientSize = System::Drawing::Size(1245, 884);
+			this->ClientSize = System::Drawing::Size(948, 571);
+			this->Controls->Add(this->numericUpDown5);
+			this->Controls->Add(this->numericUpDown4);
+			this->Controls->Add(this->numericUpDown2);
+			this->Controls->Add(this->numericUpDown3);
+			this->Controls->Add(this->numericUpDown1);
+			this->Controls->Add(this->label8);
+			this->Controls->Add(this->label7);
+			this->Controls->Add(this->label6);
+			this->Controls->Add(this->label5);
+			this->Controls->Add(this->label4);
+			this->Controls->Add(this->label3);
+			this->Controls->Add(this->pictureBox3);
 			this->Controls->Add(this->button8);
-			this->Controls->Add(this->textBox1);
-			this->Controls->Add(this->checkBox1);
 			this->Controls->Add(this->button7);
 			this->Controls->Add(this->label2);
 			this->Controls->Add(this->button6);
@@ -542,18 +556,23 @@ private: System::Windows::Forms::Button^  button8;
 			this->Controls->Add(this->pictureBox2);
 			this->Controls->Add(this->button1);
 			this->Controls->Add(this->pictureBox1);
-			this->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			this->FormBorderStyle = System::Windows::Forms::FormBorderStyle::FixedDialog;
 			this->Name = L"MyForm";
 			this->Text = L"MyForm";
-			this->Load += gcnew System::EventHandler(this, &MyForm::MyForm_Load);
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox1))->EndInit();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox2))->EndInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox3))->EndInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->numericUpDown1))->EndInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->numericUpDown3))->EndInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->numericUpDown2))->EndInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->numericUpDown4))->EndInit();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->numericUpDown5))->EndInit();
 			this->ResumeLayout(false);
 			this->PerformLayout();
 
 		}
 #pragma endregion
-	
+
 
 
 	private: System::Void button1_Click(System::Object^  sender, System::EventArgs^  e) {
@@ -574,184 +593,143 @@ private: System::Windows::Forms::Button^  button8;
 		srcOriginal = imread(ConvertString2Char(opDialog->FileName));
 	}
 
-private: System::Void button2_Click(System::Object^  sender, System::EventArgs^  e) {
+	private: System::Void button2_Click(System::Object^  sender, System::EventArgs^  e) {
 
 
-	if (!pictureBox1->Image) return;
+		if (!pictureBox1->Image) return;
 
 
-	src = toGrayScale(src);
-	
-	pictureBox1->Image = toBitMapPoint(src);
-	pictureBox1->Refresh();
+		src = toGrayScale(src);
 
-	if (checkBox1->Checked)
-	imshow("Display window", src);
+		pictureBox1->Image = toBitMapPoint(src);
+		pictureBox1->Refresh();
+		imshow("Display window", src);
 
-}
+	}
 
 
 
 	private: char* ConvertString2Char(System::String^ str)
 	{
 		char* str2 = (char*)(void*)Marshal::StringToHGlobalAnsi(str);
-		return str2;	
+		return str2;
 	}
 
 
-private: System::Void button3_Click(System::Object^  sender, System::EventArgs^  e) {
+	private: System::Void button3_Click(System::Object^  sender, System::EventArgs^  e) {
 
-	if (!pictureBox1->Image) return;
+		if (!pictureBox1->Image) return;
 
 
 
-	src = mid_filtration(src, 9);
+		src = mid_filtration(src, 3);
+
+		pictureBox1->Image = toBitMapPoint(src);
+		pictureBox1->Refresh();
+		imshow("Display window", src);
+
+	}
+	private: System::Void button6_Click(System::Object^  sender, System::EventArgs^  e) {
+
+
+		if (!pictureBox1->Image) return;
+
+		src = addNoize(src, 10, 20);
+
+		pictureBox1->Image = toBitMapPoint(src);
+		pictureBox1->Refresh();
+		imshow("Display window", src);
+
+	}
+	private: System::Void button4_Click(System::Object^  sender, System::EventArgs^  e) {
+
+		if (!pictureBox1->Image) return;
+
+
+		float sim = Similarity(src, srcOriginal);
+
+		label2->Text = "Similarity is: " + Convert::ToString(sim * 100) + "%";
+
+	}
+	private: System::Void button5_Click(System::Object^  sender, System::EventArgs^  e) {
+
+
+		if (!pictureBox1->Image) return;
+
+		srcOriginal = src.clone();
+		pictureBox2->Image = toBitMapPoint(src);
+		pictureBox2->Refresh();
+
+
+	}
+	private: System::Void button7_Click(System::Object^  sender, System::EventArgs^  e) {
+
+		if (!pictureBox1->Image) return;
+		imshow("Display window", src);
+
+	}
+	private: System::Void button8_Click(System::Object^  sender, System::EventArgs^  e) {
 	
-	pictureBox1->Image = toBitMapPoint(src);
-	pictureBox1->Refresh();
-
-	if (checkBox1->Checked)
-	imshow("Display window", src);
-
-
-
-}
-private: System::Void button6_Click(System::Object^  sender, System::EventArgs^  e) {
-
-
-	if (!pictureBox1->Image) return;
-
-	src = addNoize(src, 10, 20);
-	
-	pictureBox1->Image = toBitMapPoint(src);
-	pictureBox1->Refresh();
-
-	if (checkBox1->Checked)
-	imshow("Display window", src);
-
-}
-private: System::Void button4_Click(System::Object^  sender, System::EventArgs^  e) {
-
-	if (!pictureBox1->Image) return;
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		k = 2;
 
 
-	//float sim = Similarity(src, srcOriginal);
-	float sim = SSIM_Similarity(src, srcOriginal);
+		k = System::Convert::ToInt32(numericUpDown2->Value);
 
-	label2->Text = "Similarity is: " + Convert::ToString(sim * 100) + "%";
-
-}
-private: System::Void button5_Click(System::Object^  sender, System::EventArgs^  e) {
-
-
-	if (!pictureBox1->Image) return;
-
-	srcOriginal = src.clone();
-	pictureBox2->Image = toBitMapPoint(src);
-	pictureBox2->Refresh();
+		int dist_dig = System::Convert::ToInt32(numericUpDown1->Value);
+		int col_dig = System::Convert::ToInt32(numericUpDown3->Value);;
+		int col_coef = System::Convert::ToInt32(numericUpDown4->Value);;
+		int dist_coef = System::Convert::ToInt32(numericUpDown5->Value);;
 
 
-}
-private: System::Void button7_Click(System::Object^  sender, System::EventArgs^  e) {
 
-	if (!pictureBox1->Image) return;
+		clusters = new Cluster[k];
+		vector<POINT> p;
 
-	imshow("Display window", src);
+		Mat Cluss_img;
 
-}
-private: System::Void MyForm_Load(System::Object^  sender, System::EventArgs^  e) {
-}
-private: System::Void button8_Click(System::Object^  sender, System::EventArgs^  e) {
+		for (int i = 0; i < src.cols; i++)
+			for (int j = 0; j < src.rows; j++)
+			{
+				POINT c;
+				c.x = j; c.y = i;
+				p.push_back(c);
+			}
 
-	/*Mat ocv = src;
-	Mat data;
-	ocv.convertTo(data, CV_32F);
-	data = data.reshape(1, data.total());
 
-	// do kmeans
-	Mat labels, centers;
-	kmeans(data, 8, labels, TermCriteria(CV_TERMCRIT_ITER, 10, 1.0), 3,
-		KMEANS_PP_CENTERS, centers);
+		for (int i = 0; i < k; i++)
+			for (int j = 0; j < clusters[i].scores.size(); j++)
+			{
+				POINT x = clusters[i].scores[j];
 
-	// reshape both to a single row of Vec3f pixels:
-	centers = centers.reshape(3, centers.rows);
-	data = data.reshape(3, data.rows);
+				int y = 0;
+				y = y + 10;
+			}
 
-	// replace pixel values with their center value:
-	Vec3f *p = data.ptr<Vec3f>();
-	for (size_t i = 0; i < data.rows; i++) {
-		int center_id = labels.at<int>(i);
-		p[i] = centers.at<Vec3f>(center_id);
+		Cluss_img = Cluster().Start(k, clusters, p, src, col_dig, dist_dig, col_coef, dist_coef);
+
+		for (int i = 0; i < k; i++)
+			for (int j = 0; j < clusters[i].scores.size(); j++)
+			{
+				POINT x = clusters[i].scores[j];
+
+				int y = 0;
+				y = y + 10;
+			}
+
+
+		pictureBox3->Image = toBitMapPoint(Cluss_img);
+		pictureBox3->Refresh();
 	}
-
-	// back to 2d, and uchar:
-	ocv = data.reshape(3, ocv.rows);
-	ocv.convertTo(ocv, CV_8U);
-
-	src = ocv;
-	pictureBox1->Image = toBitMapPoint(src);
-	pictureBox1->Refresh();*/
-
-	const int MAX_CLUSTERS = 10;
-	Scalar colorTab[] =
-	{
-		Scalar(0, 0, 255),
-		Scalar(0,255,0),
-		Scalar(255,100,100),
-		Scalar(255,0,255),
-		Scalar(0,255,255),
-		Scalar(50, 50, 255),
-		Scalar(40,205,10),
-		Scalar(200,100,150),
-		Scalar(20,30,105),
-		Scalar(50,105,145)
-	};
-	RNG rng(123456789);
-
-	for (;;)
-	{
-		int k, clusterCount = rng.uniform(2, MAX_CLUSTERS + 1);
-		int i, sampleCount = rng.uniform(1, 10001);
-		Mat points(sampleCount, 1, CV_32FC2), labels;
-
-		clusterCount = MIN(clusterCount, sampleCount);
-		Mat centers(clusterCount, 1, points.type());
-
-		for (k = 0; k < clusterCount; k++)
-		{
-			POINT center;
-			center.x = rng.uniform(0, src.cols);
-			center.y = rng.uniform(0, src.rows);
-			Mat pointChunk = points.rowRange(k*sampleCount / clusterCount,
-				k == clusterCount - 1 ? sampleCount :
-				(k + 1)*sampleCount / clusterCount);
-			rng.fill(pointChunk, CV_RAND_NORMAL, Scalar(center.x, center.y), Scalar(src.cols*0.05, src.rows*0.05));
-		}
-
-		randShuffle(points, 1, &rng);
-		kmeans(points, clusterCount, labels,
-			TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 10, 1.0),
-			3, KMEANS_PP_CENTERS, centers);
-
-		src = Scalar::all(0);
-
-		for (i = 0; i < sampleCount; i++)
-		{
-			int clusterIdx = labels.at<int>(i);
-			Point2f ipt = points.at<Point2f>(i);
-			circle(src, ipt, 2, colorTab[clusterIdx], CV_FILLED, CV_AA);
-		}
-
-		imshow("clusters", src);
-
-		char key = (char)waitKey();
-		if (key == 27 || key == 'q' || key == 'Q') // 'ESC'
-			break;
-
+	private: System::Void numericUpDown2_ValueChanged(System::Object^  sender, System::EventArgs^  e) {
 	}
-
-}
-private: System::Void pictureBox1_Click(System::Object^  sender, System::EventArgs^  e) {
-}
 };
 }
